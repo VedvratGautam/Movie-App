@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import Search from './components/search'
 import Spinner from './components/spinner'
 import MovieCard from './components/MovieCard'
+import { useDebounce } from 'react-use'
 
 //Setting up function to get requests
 const API_BASE_URL = 'https://api.themoviedb.org/3'
@@ -22,13 +23,27 @@ const API_OPTIONS = {
   const [errorMessage , setErrorMessage] = useState('') //states for API errors
   const [movieList, setMovieList] = useState([]) //states for loaded movies
   const [isLoading, setIsLoading] = useState(false) //state for while fetching movies 
+  const [debouncedSearchTerm, setdebouncedSearchTerm] = useState('')
+
+  //Debouncing search term  
+  useDebounce(() => {
+    setdebouncedSearchTerm(searchTerm)}, 
+    500,
+    [searchTerm]
+  )
 
   //Sending request to API
-  const fetchMovies = async () => {
+  const fetchMovies = async (query = '') => {
     setIsLoading(true)
     setErrorMessage('')
+
     try{
-      const endpoint = `${API_BASE_URL}/discover/movie?sort_by=popularity.desc`
+      //Adding searching capability
+      const endpoint = query ? 
+       `${API_BASE_URL}/search/movie?query=${encodeURIComponent(query)}`
+      :`${API_BASE_URL}/discover/movie?sort_by=popularity.desc`
+
+ 
       const response = await fetch(endpoint, API_OPTIONS)
       
       if(!response.ok){
@@ -55,10 +70,10 @@ const API_OPTIONS = {
     }
   }
 
-  //calling API once when app loads
+  //Setting up search
   useEffect(() => {
-    fetchMovies()
-  }, [])
+    fetchMovies(debouncedSearchTerm)
+  }, [debouncedSearchTerm])
 
    return (
     <main>
